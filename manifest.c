@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,7 +12,7 @@
 #include <fcntl.h>
 
 #define USERNAME_MAX_LEN 32
-
+#define GROUPNAME_MAX_LEN 32
 int run_command(char *args[]) {
     pid_t pid = fork();
 
@@ -117,7 +116,7 @@ int ask_confirmation(void) {
         if (strcmp(answer, "nay") == 0)
             return 0;
 
-        printf("[ByteixOS]: That's not an option. Try again.\n");
+        printf("[ByteixOS]: Are you sure you don't need to go back to kindergarten? That's not an option.\n");
     }
 }
 
