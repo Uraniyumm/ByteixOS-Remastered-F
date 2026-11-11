@@ -1,5 +1,7 @@
 // assign.c 
 
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -170,7 +172,7 @@ int ask_confirmation(void) {
 int append_acl(char *acl, size_t size, const char *entry) {
     size_t used = strlen(acl);
 
-    if (used >= size)
+    if (used >= size - 1)
         return 0;
 
     int written = snprintf(
@@ -181,7 +183,7 @@ int append_acl(char *acl, size_t size, const char *entry) {
         entry
     );
 
-    return written >= 0 && (size_t)written < size - used;
+    return written > 0 && (size_t)written < size - used;
 }
 
 int collect_targets(Assignment targets[], int *count) {
@@ -279,12 +281,13 @@ int assign_user_to_file(
 
     int is_directory = S_ISDIR(path_info->st_mode);
 
-    const char *permissions = "rw-";
+    // access_mode is set to "rwx" for directories or executable files, otherwise "rw-"
+    const char *access_mode = "rw-";
 
     if (is_directory ||
         (path_info->st_mode &
          (S_IXUSR | S_IXGRP | S_IXOTH))) {
-        permissions = "rwx";
+        access_mode = "rwx";
     }
 
     for (int i = 0; i < count; i++) {
@@ -296,7 +299,7 @@ int assign_user_to_file(
             "%c:%s:%s",
             targets[i].type,
             targets[i].name,
-            permissions
+            access_mode
         );
 
         if (!append_acl(acl, sizeof(acl), entry)) {
@@ -311,7 +314,7 @@ int assign_user_to_file(
                 "d:%c:%s:%s",
                 targets[i].type,
                 targets[i].name,
-                permissions
+                access_mode
             );
 
             if (!append_acl(acl, sizeof(acl), entry)) {
@@ -340,6 +343,7 @@ int assign_user_to_file(
 
 int main(int argc, char *argv[]) {
     if (geteuid() != 0) {
+        printf("[ByteixOS]: Error: This operation requires superuser (sudo) privileges.\n");
         printf("[ByteixOS]: YOU NEED SUDO!!! WHY ARE YOU NOT USING SUDO!!!!!!!!!!!??\n");
         return 1;
     }
@@ -359,7 +363,8 @@ int main(int argc, char *argv[]) {
     struct stat path_info;
 
     if (stat(filepath, &path_info) != 0) {
-        perror("[ByteixOS]: Path");
+        printf("[ByteixOS]: Path: ");
+        perror(NULL);
         return 1;
     }
 
